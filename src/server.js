@@ -1,6 +1,5 @@
 import * as http from "http";
 import {logger} from "./logger.js";
-import async_hooks from 'async_hooks';
 import {findById, getExtradoByCliente, insertTransaction, updateClient} from "./database.js";
 
 const PORT = process.env.PORT;
