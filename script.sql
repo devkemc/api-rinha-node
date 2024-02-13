@@ -25,17 +25,3 @@ VALUES
   ('padaria joia de cocaia', 100000 * 100),
   ('kid mais', 5000 * 100);
 
--- CREATE OR REPLACE FUNCTION apagar_registro_mais_antigo() RETURNS TRIGGER AS $$
--- BEGIN
---     IF (SELECT count(*) FROM transacoes) > 10 THEN
---         DELETE FROM transacoes
---         WHERE id = (SELECT id FROM transacoes ORDER BY realizada_em ASC LIMIT 1);
---     END IF;
---     RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
---
--- CREATE TRIGGER trigger_apagar_registro_mais_antigo
--- AFTER INSERT ON transacoes
--- FOR EACH ROW
--- EXECUTE FUNCTION apagar_registro_mais_antigo();

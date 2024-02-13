@@ -2,15 +2,13 @@ version: "3.5"
 
 services:
   api01: &api
+    image: devkemc/api-rinha:v1
     # Lembre-se de que seu serviço HTTP deve estar hospedado num repositório
     # publicamente acessível! Ex.: hub.docker.com
-    build:
-      context: .
-      dockerfile: Dockerfile
     hostname: api01
     environment:
       - HOST_DB=db
-      - PORT_DB=5432
+      - PORT_DB=5432z
       - USER_DB=admin
       - PASSWORD_DB=123
       - DATABASE=rinha
