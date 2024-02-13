@@ -1,15 +1,11 @@
 import * as http from "http";
-import cluster from 'cluster';
 import {logger} from "./logger.js";
+import async_hooks from 'async_hooks';
 import {findById, getExtradoByCliente, insertTransaction, updateClient} from "./database.js";
 
 const PORT = process.env.PORT;
-const TIMEOUT = Number(process.env.REQ_TIMEOUT) || 5000;
 const app = http.createServer((req, res) => {
   if (req.method === 'GET') {
-    if (req.url === '/clientes') {
-      return getClientes(req, res);
-    }
     const urlParts = req.url.split('/');
     if (urlParts.length === 4 && urlParts[1] === 'clientes' && urlParts[3] === 'extrato') {
       return getExtrato(Number(urlParts[2]), req, res);
@@ -97,22 +93,9 @@ async function getExtrato(clienteId, req, res) {
   }
 }
 
-const numForks = Number(process.env.CLUSTER_WORKERS) || 1;
-
-if (cluster.isPrimary && process.env.CLUSTER === 'true') {
-  logger.info(`server.js: Primary ${process.pid} is running`);
-
-  for (let i = 0; i < numForks; i++) {
-    cluster.fork();
-  }
-
-  cluster.on('exit', (worker, code, signal) => {
-    logger.info(`index.js: worker ${worker.process.pid} died: code ${code} signal ${signal}`);
-  });
-} else {
-  app.listen(PORT, '', () => {
-    logger.info(`server.js:${process.pid}:Listening on ${PORT}`);
-  })
+app.listen(PORT, '', () => {
+  logger.info(`server.js:${process.pid}:Listening on ${PORT}`);
+})
 
 
-}
+

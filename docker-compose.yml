@@ -14,10 +14,8 @@ services:
       - USER_DB=admin
       - PASSWORD_DB=123
       - DATABASE=rinha
-      - MAX_CONNECTION_DB=2
+      - MAX_CONNECTION_DB=1
       - PORT=8080
-      - CLUSTER=false
-      - CLUSTER_WORKERS=2
 
     # Não é necessário expor qualquer porta além da porta do load balancer,
     # mas é comum as pessoas o fazerem para testarem suas APIs e conectarem
@@ -34,8 +32,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.55"
-          memory: "200MB"
+          cpus: "0.50"
+          memory: "225MB"
 
   api02:
     <<: *api
@@ -59,8 +57,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: "100MB"
+          cpus: "0.40"
+          memory: "50MB"
 
   db:
     image: postgres:latest
@@ -81,7 +79,7 @@ services:
           # de memória. A distribuição feita aqui é apenas
           # um exemplo – distribua como quiser.
           cpus: "0.10"
-          memory: "140MB"
+          memory: "50MB"
 
 # O uso do modo `bridge` deve ser adequado à carga que será usada no teste.
 # A edição anterior se beneficiou do modo host pois o volume de requisições
