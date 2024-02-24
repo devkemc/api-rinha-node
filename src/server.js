@@ -60,7 +60,7 @@ async function fazerTransancao(clienteId, req, res) {
       }))
     });
   } catch (e) {
-    logger.error(e)
+
     return res.writeHead(500).end();
   }
 }
@@ -87,7 +87,7 @@ async function getExtrato(clienteId, req, res) {
     res.writeHead(200, {'Content-Type': 'application/json'});
     return res.end(JSON.stringify(response));
   } catch (e) {
-    logger.error(e)
+
     return res.writeHead(500).end();
   }
 }

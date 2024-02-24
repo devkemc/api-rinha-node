@@ -52,7 +52,7 @@ export async function updateClient(cliente) {
     SET saldo = $1, 
         limite = $2 
     WHERE id = $3 
-    RETURNING *;
+    RETURNING limite,saldo;
    `
   const response = await client.query(query, [cliente.saldo, cliente.limite, cliente.id])
   client.release()
@@ -63,7 +63,7 @@ export async function getExtradoByCliente(clienteId) {
   const client = await pool.connect()
   const query = `
     SELECT
-        *
+        valor,tipo,descricao,realizada_em
     FROM
         transacoes
     WHERE "cliente_id" = $1
@@ -77,7 +77,7 @@ export async function getExtradoByCliente(clienteId) {
 export async function findById(clienteId) {
   if (!clientes) {
     const client = await pool.connect()
-    clientes = (await client.query('SELECT * FROM clientes')).rows
+    clientes = (await client.query('SELECT id,limite,saldo FROM clientes')).rows
     client.release()
   }
   return clientes.find(cliente => cliente.id === clienteId)
