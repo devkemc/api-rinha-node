@@ -9,6 +9,7 @@ const pool = new pg.Pool({
 });
 
 const PORT = process.env.PORT;
+
 const app = http.createServer((req, res) => {
   if (req.method === 'GET') {
     const urlParts = req.url.split('/');
@@ -23,28 +24,35 @@ const app = http.createServer((req, res) => {
       return fazerTransancao(clienteId, req, res);
     }
   }
-
   return res.write(404).end('NotFound');
 })
 
 async function fazerTransancao(clienteId, req, res) {
   try {
+
     const client = await pool.connect()
+
     const cliente = await findById(client,clienteId)
+
     if (!cliente) {
       client.release()
-      return res.writeHead(404).end(JSON.stringify({message: 'vim é melhor que nano'}));
+      return res.writeHead(404);
     }
+
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString(); // Convertendo os chunks para string
     });
+
     req.on('end', async () => {
+
       const {valor, tipo, descricao} = JSON.parse(body);
-      if ((tipo !== 'd' && tipo !== 'c') || (Number.isFinite(valor) && !Number.isInteger(valor)) || (!descricao || descricao.trim().length > 10)) {
-        client.release()
+
+      if ((tipo !== 'd' && tipo !== 'c') || !Number.isInteger(valor) || (descricao==null || descricao.trim().length > 10 || descricao == '')) {
+        client.release();
         return res.writeHead(422).end();
       }
+
       if (tipo === 'd') {
         const debito = valor > cliente.saldo ? cliente.saldo - valor : 0
         if (debito + cliente.limite < 0 || cliente.limite + cliente.saldo === 0) {
@@ -56,13 +64,11 @@ async function fazerTransancao(clienteId, req, res) {
       else if (tipo === 'c') {
         cliente.saldo = cliente.saldo + valor
       }
-      await insertTransaction(client,cliente, {valor, tipo, descricao})
-      
-      const retorno = await updateClient(client,cliente)
+      insertTransaction(client,cliente, {valor, tipo, descricao})
+      updateClient(client,cliente)
       client.release()
-      const [clienteAtualizado] = retorno.rows
       return res.writeHead(200, {'Content-type': 'application/json'}).end(JSON.stringify({
-        "limite": clienteAtualizado.limite, "saldo": clienteAtualizado.saldo
+        "limite": cliente.limite, "saldo": cliente.saldo
       }))
     });
   } catch (e) {
@@ -75,6 +81,7 @@ async function getExtrato(clienteId, req, res) {
   try {
     const client = await pool.connect()
     const cliente = await findById(client,clienteId)
+    
     if (!cliente) {
       client.release()
       return res.writeHead(404).end();

@@ -26,8 +26,7 @@ export async function updateClient(client,cliente) {
     UPDATE clientes 
     SET saldo = $1, 
         limite = $2 
-    WHERE id = $3 
-    RETURNING limite,saldo;
+    WHERE id = $3; 
    `
   const response = await client.query(query, [cliente.saldo, cliente.limite, cliente.id])
   return response
