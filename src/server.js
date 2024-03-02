@@ -1,6 +1,12 @@
 import * as http from "http";
-import {logger} from "./logger.js";
 import {findById, getExtradoByCliente, insertTransaction, updateClient} from "./database.js";
+
+import pg from 'pg';
+
+const URL = process.env.DB_URL || 'postgres://admin:123@db:5432/rinha';
+const pool = new pg.Pool({
+  connectionString: URL,
+});
 
 const PORT = process.env.PORT;
 const app = http.createServer((req, res) => {
@@ -23,9 +29,11 @@ const app = http.createServer((req, res) => {
 
 async function fazerTransancao(clienteId, req, res) {
   try {
-    const cliente = await findById(clienteId)
+    const client = await pool.connect()
+    const cliente = await findById(client,clienteId)
     if (!cliente) {
-      return res.writeHead(404).end(JSON.stringify({message: 'Cliente não encontrado'}));
+      client.release()
+      return res.writeHead(404).end(JSON.stringify({message: 'vim é melhor que nano'}));
     }
     let body = '';
     req.on('data', chunk => {
@@ -33,27 +41,25 @@ async function fazerTransancao(clienteId, req, res) {
     });
     req.on('end', async () => {
       const {valor, tipo, descricao} = JSON.parse(body);
-      if (tipo !== 'd' && tipo !== 'c') {
-        return res.writeHead(422).end();
-      }
-      if (Number.isFinite(valor) && !Number.isInteger(valor)) {
-        return res.writeHead(422).end();
-      }
-      if (!descricao || descricao.trim().length > 10) {
+      if ((tipo !== 'd' && tipo !== 'c') || (Number.isFinite(valor) && !Number.isInteger(valor)) || (!descricao || descricao.trim().length > 10)) {
+        client.release()
         return res.writeHead(422).end();
       }
       if (tipo === 'd') {
         const debito = valor > cliente.saldo ? cliente.saldo - valor : 0
         if (debito + cliente.limite < 0 || cliente.limite + cliente.saldo === 0) {
+          client.release()
           return res.writeHead(422).end();
         }
         cliente.saldo = cliente.saldo - valor
       }
-      if (tipo === 'c') {
+      else if (tipo === 'c') {
         cliente.saldo = cliente.saldo + valor
       }
-      await insertTransaction(cliente, {valor, tipo, descricao})
-      const retorno = await updateClient(cliente)
+      await insertTransaction(client,cliente, {valor, tipo, descricao})
+      
+      const retorno = await updateClient(client,cliente)
+      client.release()
       const [clienteAtualizado] = retorno.rows
       return res.writeHead(200, {'Content-type': 'application/json'}).end(JSON.stringify({
         "limite": clienteAtualizado.limite, "saldo": clienteAtualizado.saldo
@@ -67,11 +73,15 @@ async function fazerTransancao(clienteId, req, res) {
 
 async function getExtrato(clienteId, req, res) {
   try {
-    const cliente = await findById(clienteId)
+    const client = await pool.connect()
+    const cliente = await findById(client,clienteId)
     if (!cliente) {
+      client.release()
       return res.writeHead(404).end();
     }
-    const result = await getExtradoByCliente(clienteId)
+    
+    const result = await getExtradoByCliente(client,clienteId)
+    client.release()
     const response = {
       "saldo": {
         "total": cliente.saldo, "data_extrato": new Date().toISOString(), "limite": cliente.limite,
@@ -84,6 +94,8 @@ async function getExtrato(clienteId, req, res) {
         }
       })
     }
+
+    
     res.writeHead(200, {'Content-Type': 'application/json'});
     return res.end(JSON.stringify(response));
   } catch (e) {
@@ -93,7 +105,7 @@ async function getExtrato(clienteId, req, res) {
 }
 
 app.listen(PORT, '', () => {
-  logger.info(`server.js:${process.pid}:Listening on ${PORT}`);
+  console.log("API rodando");
 })
 
 
