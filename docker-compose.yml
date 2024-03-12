@@ -24,16 +24,11 @@ services:
       - "8080"
     depends_on:
       - db
-    ulimits:
-      nproc: 1000000
-      nofile:
-        soft: 1000000
-        hard: 1000000
     deploy:
       resources:
         limits:
-          cpus: "0.50"
-          memory: "225MB"
+          cpus: "0.3"
+          memory: "60MB"
 
   api02:
     <<: *api
@@ -49,16 +44,11 @@ services:
     ports:
       # Obrigatório expor/usar a porta 9999 no load balancer!
       - "9999:9999"
-    ulimits:
-      nproc: 1000000
-      nofile:
-        soft: 1000000
-        hard: 1000000
     deploy:
       resources:
         limits:
-          cpus: "0.40"
-          memory: "50MB"
+          cpus: "0.05"
+          memory: "8MB"
 
   db:
     image: postgres:latest
@@ -69,6 +59,7 @@ services:
       - POSTGRES_DB=rinha
     ports:
       - "5431:5432"
+    command: postgres -c 'max_connections=100'
     volumes:
       - ./script.sql:/docker-entrypoint-initdb.d/script.sql
     deploy:
@@ -78,8 +69,8 @@ services:
           # aqui declarados é de 1.5 unidades de CPU e 550MB
           # de memória. A distribuição feita aqui é apenas
           # um exemplo – distribua como quiser.
-          cpus: "0.10"
-          memory: "50MB"
+          cpus: "0.85"
+          memory: "422MB"
 
 # O uso do modo `bridge` deve ser adequado à carga que será usada no teste.
 # A edição anterior se beneficiou do modo host pois o volume de requisições
